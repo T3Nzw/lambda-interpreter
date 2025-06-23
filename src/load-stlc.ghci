@@ -1,0 +1,9 @@
+:l Parser/Parser.hs LambdaParser.hs LambdaTerm.hs STLC/Type.hs STLC/Inference.hs Utils/NamedTerm.hs Utils/Substitution.hs
+
+import Parser
+import LambdaParser
+import LambdaTerm
+import STLC.Type
+import STLC.Inference
+import Utils.NamedTerm
+import Utils.Substitution

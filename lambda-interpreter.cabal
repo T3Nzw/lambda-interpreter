@@ -1,0 +1,68 @@
+cabal-version:      3.0
+name:               lambda-interpreter
+version:            0.1.0.0
+license:            MIT 
+license-file:       LICENSE
+author:             T3Nzw
+maintainer:         mnicoxyz@gmail.com
+build-type:         Simple
+extra-doc-files:    CHANGELOG.md
+
+common warnings
+    ghc-options: -Wall
+
+library lambda-interpreter-lib
+  exposed-modules:  Interpreter, CommandParser, LambdaParser, NamelessTerm, Parser, Reduction, STLC.Inference, LambdaTerm, LocallyNamelessTerm, Command, CommandHelp, Pager, STLC.Type, Defs, Utils.NamedTerm, Church.Numerals, Combinators, Utils.Substitution, Utils.Visualisation, Utils.StepThrough, Builtin.Environment, Church.Pair, Expansion, Church.List, ApplicativeTerm, TypedTerm, CommandResult
+  hs-source-dirs:   app, src, src/Pager, src/STLC, src/Parser, src/Command, src/Utils, src/Named, src/Nameless, src/Builtin, src/Church, src/Applicative, src/Typed
+
+  build-depends:    base ^>=4.18.3.0,
+                    mtl,
+                    transformers,
+                    Cabal-syntax,
+                    haskeline,
+                    containers,
+                    ansi-terminal,
+                    process,
+                    unix,
+                    lens
+
+  default-language: Haskell2010
+
+executable lambda-interpreter
+    import:           warnings
+    main-is:          Main.hs
+    build-depends:    base ^>=4.18.3.0,
+                      lambda-interpreter-lib,
+                      mtl,
+                      transformers,
+                      Cabal-syntax,
+                      haskeline,
+                      containers,
+                      ansi-terminal,
+                      process,
+                      unix,
+                      lens
+
+    hs-source-dirs:  app 
+    default-language: Haskell2010
+
+test-suite lambda-interpreter-tests
+  type:             exitcode-stdio-1.0
+  hs-source-dirs:   tests 
+  main-is:          Main.hs
+  build-depends:    base ^>=4.18.3.0,
+                    hspec >= 2.7,
+                    lambda-interpreter-lib,
+                    mtl,
+                    transformers,
+                    Cabal-syntax,
+                    haskeline,
+                    containers,
+                    ansi-terminal,
+                    process,
+                    unix,
+                    lens
+
+  other-modules:    Repl, Nameless
+
+  default-language: Haskell2010
