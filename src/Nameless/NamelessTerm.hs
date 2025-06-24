@@ -141,23 +141,18 @@ largestIndex (Var i) = i
 largestIndex (App lhs rhs) = max (largestIndex lhs) (largestIndex rhs)
 largestIndex (Abs body) = largestIndex body
 
--- need to keep track of indices that have been assigned
--- some variable names inside of a context
--- this one doesn't rely on a fixed context :)
--- can be done with a fixed context (which was
--- the actual problem description, lol)
--- by precomputing the largest index in the term
--- and creating a fixed-size context :)
--- i think this implementation would have no problem
--- also not having a context, it wouldn't cause
--- any clashes in variable naming
 toNamed :: NamelessTerm -> LambdaTerm
-toNamed term = undefined
+toNamed term = helper (-1) term
   where
     ctx :: [String]
     ctx = ('x' :) . show <$> [0 .. largestIndex term]
 
-    -- abstraction vars?
-    helper :: Int -> NamelessTerm -> LambdaTerm
-    helper n (Var i) = Variable $ ctx !! i
-    helper n (App lhs rhs) = Application (helper n lhs) (helper n rhs)
+    helper :: Index -> NamelessTerm -> LambdaTerm
+    helper k (Var i)
+      | k - i >= 0 = Variable $ ctx !! (k - i)
+      | otherwise = Variable $ ctx !! (k + 1)
+    helper _ (App lhs@(Abs _) rhs@(Abs _)) = Application (helper (-1) lhs) (helper (-1) rhs)
+    helper k (App lhs@(Abs _) rhs) = Application (helper (-1) lhs) (helper k rhs)
+    helper k (App lhs rhs@(Abs _)) = Application (helper k lhs) (helper (-1) rhs)
+    helper k (App lhs rhs) = Application (helper k lhs) (helper k rhs)
+    helper k (Abs body) = Abstraction (ctx !! (k + 1)) $ helper (k + 1) body
