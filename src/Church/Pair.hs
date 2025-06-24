@@ -6,10 +6,10 @@ pair :: LambdaTerm
 pair = Abstraction "x" $ Abstraction "y" $ Abstraction "f" $ Application (Application (Variable "f") (Variable "x")) (Variable "y")
 
 leftproj :: LambdaTerm
-leftproj = Abstraction "x" $ Abstraction "y" $ Variable "x"
+leftproj = Abstraction "p" $ Application (Variable "p") $ Abstraction "x" $ Abstraction "y" $ Variable "x"
 
 rightproj :: LambdaTerm
-rightproj = Abstraction "x" $ Abstraction "y" $ Variable "y"
+rightproj = Abstraction "p" $ Application (Variable "p") $ Abstraction "x" $ Abstraction "y" $ Variable "y"
 
 leftapply :: LambdaTerm
 leftapply = Abstraction "g" $ Abstraction "x" $ Abstraction "y" $ Abstraction "f" $ Application (Application (Variable "f") (Application (Variable "g") (Variable "x"))) (Variable "y")

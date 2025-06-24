@@ -34,6 +34,9 @@ extractBound (Variable _) = S.empty
 extractBound (Application lhs rhs) = extractBound lhs `S.union` extractBound rhs
 extractBound (Abstraction var body) = S.fromList [var] `S.union` extractBound body
 
+isFreeIn :: String -> LambdaTerm -> Bool
+isFreeIn var term = var `elem` extractFreeVars term
+
 genSym :: String -> IO String
 genSym var = newUnique <&> ((var ++) . show . hashUnique)
 

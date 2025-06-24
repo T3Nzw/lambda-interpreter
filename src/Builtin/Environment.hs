@@ -1,14 +1,16 @@
 module Builtin.Environment where
 
+import Church.Logical
 import Church.Numerals
 import Church.Pair
+import Combinators.Named
 import Data.Bifunctor
 import qualified Data.Map as M
 import Defs
 import LambdaTerm (LambdaTerm)
 
 builtinEnv :: Environment
-builtinEnv = M.fromList $ map (second Right) $ allPairs ++ allNumerals
+builtinEnv = M.fromList $ map (second Right) $ allPairs ++ allNumerals ++ allCombinators ++ allLogical
 
 showEnv :: M.Map String (Either String LambdaTerm) -> String
 showEnv = helper . M.toList
