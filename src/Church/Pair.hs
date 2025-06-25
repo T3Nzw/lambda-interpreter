@@ -12,10 +12,20 @@ rightproj :: LambdaTerm
 rightproj = Abstraction "p" $ Application (Variable "p") $ Abstraction "x" $ Abstraction "y" $ Variable "y"
 
 leftapply :: LambdaTerm
-leftapply = Abstraction "g" $ Abstraction "x" $ Abstraction "y" $ Abstraction "f" $ Application (Application (Variable "f") (Application (Variable "g") (Variable "x"))) (Variable "y")
+leftapply =
+  Abstraction "g" $
+    Abstraction "x" $
+      Abstraction "y" $
+        Abstraction "f" $
+          Application (Application (Variable "f") (Application (Variable "g") (Variable "x"))) (Variable "y")
 
 rightapply :: LambdaTerm
-rightapply = Abstraction "g" $ Abstraction "x" $ Abstraction "y" $ Abstraction "f" $ Application (Application (Variable "f") (Variable "x")) (Application (Variable "g") (Variable "y"))
+rightapply =
+  Abstraction "g" $
+    Abstraction "x" $
+      Abstraction "y" $
+        Abstraction "f" $
+          Application (Application (Variable "f") (Variable "x")) (Application (Variable "g") (Variable "y"))
 
 allPairs :: [(String, LambdaTerm)]
 allPairs =

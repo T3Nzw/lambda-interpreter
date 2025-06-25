@@ -1,5 +1,6 @@
 module Builtin.Environment where
 
+import Church.List (allList)
 import Church.Logical
 import Church.Numerals
 import Church.Pair
@@ -10,7 +11,7 @@ import Defs
 import LambdaTerm (LambdaTerm)
 
 builtinEnv :: Environment
-builtinEnv = M.fromList $ map (second Right) $ allPairs ++ allNumerals ++ allCombinators ++ allLogical
+builtinEnv = M.fromList $ map (second Right) $ allPairs ++ allNumerals ++ allCombinators ++ allLogical ++ allList
 
 showEnv :: M.Map String (Either String LambdaTerm) -> String
 showEnv = helper . M.toList

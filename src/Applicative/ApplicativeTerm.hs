@@ -22,21 +22,6 @@ instance Show ApplicativeTerm where
   show S = "s"
   show K = "k"
 
-{-
-2.18 - basically the same as SKI calculus but without the I
-I = ... (i need to write this out ON PAPER)
-but just substitute  I with it
-
-taken very much from wikipedia,
-i was able to derive only the first two XD
-+ the going from inside out but yeah
-1. \x.x -> I
-2. \x.y -> Ky
-3. \x.y z -> S (\x.y) (\x.z)
-4. \x.Mx -> M if x not free in M (eta-reduction)
-5. \x.M -> apply the above rules for M => M' and establish similar rules for \x.M'
--}
-
 skId :: ApplicativeTerm
 skId = AApp (AApp S K) K
 
