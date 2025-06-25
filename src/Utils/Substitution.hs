@@ -2,6 +2,9 @@ module Utils.Substitution where
 
 -- TODO i need a smarter way to rename variables..........
 
+-- i forgot what most of these functions do
+-- and looking back on them they seem QUESTIONABLE
+
 import Data.Char
 import qualified Data.Foldable as Foldable
 import qualified Data.Ord as Ord
@@ -66,6 +69,8 @@ alphaConvert' = helper S.empty
 -- (\x.y x)[y ~> x]  ==  \x'.x x' (alpha-equivalent!)
 -- i think the arguments are swapped :D
 -- old is actually new, and new is old
+-- UPDATE: i think i've got the general idea down
+-- but i somehow managed to mix up old and new and idk what does what anymore
 renameCaptured :: String -> String -> LambdaTerm -> LambdaTerm
 renameCaptured old new term = snd $ helper S.empty old new term
   where
@@ -73,7 +78,7 @@ renameCaptured old new term = snd $ helper S.empty old new term
     vars = variables term
 
     -- extract all unique variable names (vars), fetch the longest name,
-    -- and generate a fresh variable name by append 0 to it :)
+    -- and generate a fresh variable name by appending 0 to it :)
     -- at the very least it's guaranteed not to cause any name clashes
     -- or futher variable captures
     freshvar = (++ "0") $ Foldable.maximumBy (Ord.comparing length) $ S.toList vars
@@ -103,7 +108,7 @@ renameCaptured old new term = snd $ helper S.empty old new term
         (flag1, lhs1) = helper bv old new lhs
         (flag2, rhs1) = helper bv old new rhs
     helper bv old new (Abstraction var body)
-      | flag && old == var = (flag, Abstraction freshvar resterm)
+      | flag || old == var = (flag, Abstraction freshvar resterm)
       | otherwise = (flag, Abstraction var resterm)
       where
         (flag, resterm) = helper (var `S.insert` bv) old new body
@@ -151,3 +156,22 @@ alphaConvert = fst . helper []
         newName = nextName var used
         replaced = rename var newName body
         (term1, used1) = helper (dropWhile isAlpha newName : used) replaced
+
+currySubstitution :: String -> LambdaTerm -> LambdaTerm -> LambdaTerm
+currySubstitution = helper
+  where
+    freshvar :: [String] -> String
+    freshvar vars = (++ "0") $ Foldable.maximumBy (Ord.comparing length) vars
+
+    helper :: String -> LambdaTerm -> LambdaTerm -> LambdaTerm
+    helper old new (Variable x)
+      | old == x = new
+      | otherwise = Variable x
+    helper old new (Application lhs rhs) =
+      Application (helper old new lhs) (helper old new rhs)
+    helper old new t@(Abstraction var body)
+      | old == var = t
+      | not (old `isFreeIn` body) || not (var `isFreeIn` new) = Abstraction var $ helper old new body
+      | otherwise = Abstraction fresh $ helper old new (helper var (Variable fresh) body)
+      where
+        fresh = freshvar $ extractFreeVars body ++ extractFreeVars new
