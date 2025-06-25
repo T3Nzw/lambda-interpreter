@@ -56,13 +56,13 @@ beta1ReduceStrict = snd . helper False
 
 -- could be optimised ever so slightly by not using fixpoint :)
 betaReduce :: LambdaFunction
-betaReduce = helper 0
+betaReduce term = helper 0 $ Sub.alphaConvert term
   where
     helper :: Int -> LambdaFunction
     helper n term
       | n > Defs.limit = term
       | Sub.fixpoint beta1Reduce term = term
-      | otherwise = helper (n + 1) (beta1Reduce term)
+      | otherwise = helper (n + 1) (Sub.alphaConvert $ beta1Reduce term)
 
 betaReduceStrict :: LambdaFunction
 betaReduceStrict = helper 0

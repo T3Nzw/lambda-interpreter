@@ -12,7 +12,7 @@ common warnings
     ghc-options: -Wall
 
 library lambda-interpreter-lib
-  exposed-modules:  Interpreter, CommandParser, LambdaParser, NamelessTerm, Parser, Reduction, STLC.Inference, LambdaTerm, LocallyNamelessTerm, Command, CommandHelp, Pager, STLC.Type, Defs, Utils.NamedTerm, Church.Numerals, Combinators, Utils.Substitution, Utils.Visualisation, Utils.StepThrough, Builtin.Environment, Church.Pair, Expansion, Church.List, ApplicativeTerm, TypedTerm, CommandResult, Combinators.Named, Church.Logical
+  exposed-modules:  Interpreter, CommandParser, LambdaParser, NamelessTerm, Parser, Reduction, STLC.Inference, LambdaTerm, LocallyNamelessTerm, Command, CommandHelp, Pager, STLC.Type, Defs, Utils.NamedTerm, Church.Numerals, Combinators, Utils.Substitution, Utils.Visualisation, Utils.StepThrough, Builtin.Environment, Church.Pair, Expansion, Church.List, ApplicativeTerm, TypedTerm, CommandResult, Combinators.Named, Church.Logical, Nameless.Parser
   hs-source-dirs:   app, src, src/Pager, src/STLC, src/Parser, src/Command, src/Utils, src/Named, src/Nameless, src/Builtin, src/Church, src/Applicative, src/Typed, src/Combinators
 
   build-depends:    base ^>=4.18.3.0,

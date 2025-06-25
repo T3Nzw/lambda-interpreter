@@ -87,6 +87,8 @@ data Command
   | LocallyNameless {_flag :: String, _term :: String}
   | SubstituteNameless {_flag :: String, _old :: String, _new :: String, _term :: String} -- TODO
   | NumeralToInt {_flag :: String, _term :: String}
+  | Applicative {_flag :: String, _term :: String}
+  | Named {_flag :: String, _term :: String}
   | Infer {_flag :: String, _term :: String}
   deriving (Show, Eq)
 
@@ -98,6 +100,12 @@ lbranch flag = Parser.branch (flag /= "-help") ltoken (many' item)
 
 lbranchEof :: String -> Parser String
 lbranchEof flag = (lbranch flag <* spaces) <* eof
+
+nbranch :: String -> Parser String
+nbranch flag = Parser.branch (flag /= "-help") namelesstoken (many' item)
+
+nbranchEof :: String -> Parser String
+nbranchEof flag = (nbranch flag <* spaces) <* eof
 
 echo :: Parser Command
 echo = do
@@ -286,6 +294,20 @@ subnameless = do
       term <- namelesstoken
       return $ SubstituteNameless flag old new term
 
+applicative :: Parser Command
+applicative = do
+  _ <- commandP ":app"
+  _ <- spaces1
+  flag <- branchF
+  Applicative flag <$> lbranchEof flag
+
+named :: Parser Command
+named = do
+  _ <- commandP ":named"
+  _ <- spaces1
+  flag <- branchF
+  Named flag <$> nbranchEof flag
+
 infer :: Parser Command
 infer = do
   _ <- commandP ":t"
@@ -314,6 +336,8 @@ command = (spaces >> p) <* eof
         <|> lnameless
         <|> numeralToInt
         <|> subnameless
+        <|> applicative
+        <|> named
         <|> infer
 
 instance Parseable Command where

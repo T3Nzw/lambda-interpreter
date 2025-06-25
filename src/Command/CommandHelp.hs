@@ -148,6 +148,12 @@ locallyNamelessHelp =
   \Optionally pass the \"-help\" flag to see a brief description of the command,\n\
   \or the \"-vis\" flag to display a colour-coded diff visualisation of the command."
 
+applicativeHelp :: String
+applicativeHelp =
+  "\ESC[93m:app {-help } <identifier | lambda_term>\n\
+  \Convert a lambda term to its applicative term representation (SK-calculus).\n\
+  \Optionally pass the \"-help\" flag to see a brief description of the command."
+
 inferHelp :: String
 inferHelp =
   "\ESC[93m:t {-help | -vis} <identifier | lambda_term>\n\

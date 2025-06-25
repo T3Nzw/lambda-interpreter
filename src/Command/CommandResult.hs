@@ -3,6 +3,7 @@
 
 module CommandResult where
 
+import qualified ApplicativeTerm as App
 import Builtin.Environment
 import CommandHelp
 import CommandParser (environment)
@@ -15,6 +16,7 @@ import Expansion
 import LambdaParser
 import LambdaTerm
 import qualified LocallyNamelessTerm as LNameless
+import qualified Nameless.Parser as NP
 import qualified NamelessTerm as Nameless
 import Parser (Parseable (..))
 import qualified Reduction as R
@@ -178,6 +180,14 @@ interpretCommand env (CP.LocallyNameless flag input)
   | none flag = Compound [UpdateEnv $ evaluateInEnv (tokenise input), Output $ pureToOutput input env LNameless.fromNamed]
   | help flag = Output locallyNamelessHelp
   | otherwise = Error $ invalidFlag "lnameless"
+interpretCommand env (CP.Applicative flag input)
+  | none flag = Compound [UpdateEnv $ evaluateInEnv (tokenise input), Output $ pureToOutput input env App.fromLambda]
+  | help flag = Output applicativeHelp
+  | otherwise = Error $ invalidFlag "app"
+interpretCommand env (CP.Named flag input)
+  | none flag = Compound [UpdateEnv $ evaluateInEnv (tokenise input), Output $ pureToOutput @Nameless.NamelessTerm input env Nameless.toNamed]
+  | help flag = Output "todo: implement help flag info for :named"
+  | otherwise = Error $ invalidFlag "named"
 interpretCommand env (CP.Infer flag input)
   | none flag = Compound [UpdateEnv $ evaluateInEnv (tokenise input), Output "todo"]
   | help flag = Output inferHelp

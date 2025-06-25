@@ -137,6 +137,9 @@ rename old new (Abstraction var body)
 -- for the first time, and then rename all variables in the term with the newly formed variable names,
 -- obtained by taking the remaining part after extracting the numeric suffix
 -- (again, that would be x in 13, and x13y in x13y) and appending the new suffix at the end :)
+-- beta reduction doesn't work correctly as of now since it depends on this function :)
+-- or i mean, it only works in some cases when no variable capture takes place
+-- or isn't fed the OMEGA combinator (which DOES get reduced :( )
 nextName :: String -> [String] -> String
 nextName prev used = head [new | n <- [0 ..] :: [Int], let new = takeWhile isAlpha prev ++ show n, show n `notElem` used]
 
