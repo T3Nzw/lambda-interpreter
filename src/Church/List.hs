@@ -101,7 +101,7 @@ filter =
                         (Variable "a")
                 )
             )
-            (Variable "z")
+            (Variable "n")
 
 foldr :: LambdaTerm
 foldr =

@@ -10,6 +10,7 @@ import CommandParser (environment)
 import qualified CommandParser as CP
 import Data.Char (isDigit)
 import qualified Data.Map as M
+import Debug.Trace
 import Defs
 import Distribution.Types.VersionRange (intersectVersionRanges)
 import Expansion
@@ -67,7 +68,7 @@ tokenise = words
 pureToOutput :: forall a b. (Show a, Parseable a, Show b) => String -> Environment -> (a -> b) -> String
 pureToOutput input env f =
   case parse @a (expand input env) of
-    Left err -> err
+    Left err -> trace (show $ (expand input env)) $ err
     Right term -> show @b $ f term
 
 -- this should potentially be extended to also return a term
@@ -185,7 +186,7 @@ interpretCommand env (CP.Applicative flag input)
   | help flag = Output applicativeHelp
   | otherwise = Error $ invalidFlag "app"
 interpretCommand env (CP.Named flag input)
-  | none flag = Compound [UpdateEnv $ evaluateInEnv (tokenise input), Output $ pureToOutput @Nameless.NamelessTerm input env Nameless.toNamed]
+  | none flag = Output $ either id (show . Nameless.toNamed) (parse input :: Either String Nameless.NamelessTerm)
   | help flag = Output "todo: implement help flag info for :named"
   | otherwise = Error $ invalidFlag "named"
 interpretCommand env (CP.Infer flag input)
