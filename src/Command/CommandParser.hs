@@ -5,6 +5,8 @@ will result in an empty list ([]) being returned. This could be
 just using a monad / monad transformer that allows for a "failure state".
 Such a monad would, for example, be Either String (Parser a), or
 in the case of a monad transformer, ExceptT
+
+-- did it for the hmic parser, just copy paste it eventually
 -}
 
 module CommandParser where
@@ -18,8 +20,8 @@ import Parser
 
 keywords :: [String]
 keywords =
-  [ "let",
-    "="
+  [ "let"
+  , "="
   ]
 
 validTermSymbols :: [Char]
@@ -61,17 +63,18 @@ namelesstoken = token $ many1 $ digit <|> oneOf "(). \\"
 data Command
   = Echo {_flag :: String, _input :: String}
   | Browse {_flag :: String}
+  | Exec {_input :: String}
   | Env {_flag :: String}
   | Definition
-      { _identifier :: String,
-        _term :: String
+      { _identifier :: String
+      , _term :: String
       }
   | Evaluate {_flag :: String, _identifier :: String}
   | Substitute
-      { _flag :: String,
-        _old :: String,
-        _new :: String,
-        _term :: String
+      { _flag :: String
+      , _old :: String
+      , _new :: String
+      , _term :: String
       }
   | AlphaConvert {_flag :: String, term :: String}
   | AlphaEquiv {_flag :: String, _lhs :: String, _rhs :: String}
@@ -124,6 +127,9 @@ browse = do
 
   return $ Browse flag
 
+exec :: Parser Command
+exec = Exec <$> (commandP ":!" >> many' item)
+
 environment :: Parser Command
 environment = do
   _ <- commandP ":env"
@@ -159,16 +165,16 @@ substitute = do
       _ <- many' item -- it doesn't have to consume everything, but it would be theoretically more correct, i reckon?
       return $ Substitute flag "" "" ""
     _ -> subP flag
-  where
-    subP :: String -> Parser Command
-    subP flag = do
-      old <- ltoken
-      _ <- char ';'
-      new <- ltoken
-      _ <- char ';'
-      term <- ltoken
-      eof
-      return $ Substitute flag old new term
+ where
+  subP :: String -> Parser Command
+  subP flag = do
+    old <- ltoken
+    _ <- char ';'
+    new <- ltoken
+    _ <- char ';'
+    term <- ltoken
+    eof
+    return $ Substitute flag old new term
 
 alphaConvert :: Parser Command
 alphaConvert = do
@@ -187,14 +193,14 @@ alphaEquiv = do
       _ <- many' item
       return $ AlphaEquiv flag "" ""
     _ -> alphaEqP flag
-  where
-    alphaEqP :: String -> Parser Command
-    alphaEqP flag = do
-      lhs <- ltoken
-      _ <- char ';'
-      rhs <- ltoken
-      eof
-      return $ AlphaEquiv flag lhs rhs
+ where
+  alphaEqP :: String -> Parser Command
+  alphaEqP flag = do
+    lhs <- ltoken
+    _ <- char ';'
+    rhs <- ltoken
+    eof
+    return $ AlphaEquiv flag lhs rhs
 
 betaReduce :: Parser Command
 betaReduce = do
@@ -285,14 +291,14 @@ subnameless = do
   case flag of
     "-help" -> many' item $> SubstituteNameless flag "" "" ""
     _ -> subP flag
-  where
-    subP flag = do
-      old <- namelesstoken
-      _ <- char ';'
-      new <- namelesstoken
-      _ <- char ';'
-      term <- namelesstoken
-      return $ SubstituteNameless flag old new term
+ where
+  subP flag = do
+    old <- namelesstoken
+    _ <- char ';'
+    new <- namelesstoken
+    _ <- char ';'
+    term <- namelesstoken
+    return $ SubstituteNameless flag old new term
 
 applicative :: Parser Command
 applicative = do
@@ -317,28 +323,29 @@ infer = do
 
 command :: Parser Command
 command = (spaces >> p) <* eof
-  where
-    p =
-      define
-        <|> echo
-        <|> browse
-        <|> environment
-        <|> eval
-        <|> substitute
-        <|> alphaEquiv
-        <|> alphaConvert
-        <|> betas
-        <|> eta1Reduce
-        <|> etaReduce
-        <|> liftMaximal
-        <|> liftMinimal
-        <|> nameless
-        <|> lnameless
-        <|> numeralToInt
-        <|> subnameless
-        <|> applicative
-        <|> named
-        <|> infer
+ where
+  p =
+    define
+      <|> echo
+      <|> browse
+      <|> exec
+      <|> environment
+      <|> eval
+      <|> substitute
+      <|> alphaEquiv
+      <|> alphaConvert
+      <|> betas
+      <|> eta1Reduce
+      <|> etaReduce
+      <|> liftMaximal
+      <|> liftMinimal
+      <|> nameless
+      <|> lnameless
+      <|> numeralToInt
+      <|> subnameless
+      <|> applicative
+      <|> named
+      <|> infer
 
 instance Parseable Command where
   parse = (\res -> if null res then Left "parse error" else Right $ fst . head $ res) . _parse command

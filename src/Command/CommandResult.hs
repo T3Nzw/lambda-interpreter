@@ -3,6 +3,9 @@
 
 module CommandResult where
 
+-- maybe encode the expansion of the input as part of the
+-- ?????????????????????????????? PART OF THE W H A T
+
 import qualified ApplicativeTerm as App
 import Builtin.Environment
 import CommandHelp
@@ -10,9 +13,7 @@ import CommandParser (environment)
 import qualified CommandParser as CP
 import Data.Char (isDigit)
 import qualified Data.Map as M
-import Debug.Trace
 import Defs
-import Distribution.Types.VersionRange (intersectVersionRanges)
 import Expansion
 import LambdaParser
 import LambdaTerm
@@ -21,7 +22,7 @@ import qualified Nameless.Parser as NP
 import qualified NamelessTerm as Nameless
 import Parser (Parseable (..))
 import qualified Reduction as R
-import System.Process (CreateProcess (env))
+import Spawn (execProcess)
 import qualified Utils.NamedTerm as N
 import qualified Utils.Substitution as Sub
 
@@ -54,13 +55,13 @@ evaluateInEnv' iden env =
 
 evaluateInEnv :: [String] -> Environment -> (String, Environment)
 evaluateInEnv tokens env = helper (filter (\tkn -> not (null tkn) && head tkn == '$') tokens) env
-  where
-    helper [] env = ("", env)
-    helper (t : ts) env =
-      let (msg, env') = evaluateInEnv' (tail t) env
-       in case msg of
-            [] -> evaluateInEnv ts env'
-            _ -> (msg, env) -- technically env' would be ok too
+ where
+  helper [] env = ("", env)
+  helper (t : ts) env =
+    let (msg, env') = evaluateInEnv' (tail t) env
+     in case msg of
+          [] -> evaluateInEnv ts env'
+          _ -> (msg, env) -- technically env' would be ok too
 
 tokenise :: String -> [String]
 tokenise = words
@@ -68,7 +69,7 @@ tokenise = words
 pureToOutput :: forall a b. (Show a, Parseable a, Show b) => String -> Environment -> (a -> b) -> String
 pureToOutput input env f =
   case parse @a (expand input env) of
-    Left err -> trace (show $ (expand input env)) $ err
+    Left err -> err
     Right term -> show @b $ f term
 
 -- this should potentially be extended to also return a term
@@ -76,6 +77,7 @@ pureToOutput input env f =
 data CommandResult
   = NoOp
   | Output String
+  | ExtOutput (IO String)
   | Error String
   | UpdateEnv (Environment -> (String, Environment))
   | StepThrough String [LambdaTerm] -- potentially polymorphic :)
@@ -92,6 +94,7 @@ interpretCommand _ (CP.Browse flag)
   | none flag = NoOp -- should probably be an IO action
   | help flag = Output browseHelp
   | otherwise = Error $ invalidFlag "browse"
+interpretCommand _ (CP.Exec input) = ExtOutput $ execProcess input
 interpretCommand env (CP.Env flag)
   | none flag = Output $ showEnv env
   | help flag = Output envHelp
@@ -105,8 +108,8 @@ interpretCommand _ (CP.Definition iden input) =
 interpretCommand env (CP.Substitute flag old new term)
   | none flag =
       Compound
-        [ UpdateEnv $ evaluateInEnv (tokenise old ++ tokenise new ++ tokenise term),
-          Output "this is a tad bit more complex (i am lazy)"
+        [ UpdateEnv $ evaluateInEnv (tokenise old ++ tokenise new ++ tokenise term)
+        , Output "this is a tad bit more complex (i am lazy)"
         ]
   | help flag = Output substituteHelp
 interpretCommand env (CP.AlphaConvert flag input)
@@ -123,12 +126,12 @@ interpretCommand env (CP.BetaReduce flag input)
   | num flag = Compound [UpdateEnv $ evaluateInEnv (tokenise input), Output $ pureToOutput input env nthIter]
   | vis flag = Compound [UpdateEnv $ evaluateInEnv (tokenise input), next]
   | otherwise = Error $ invalidFlag "beta"
-  where
-    nthIter = (!! (read (tail flag) :: Int)) . iterate R.beta1Reduce
-    term = parse (expand input env) :: Either String LambdaTerm
-    next = case term of
-      Left err -> Output err
-      Right term -> StepThrough "β> " $ iterate R.beta1Reduce term
+ where
+  nthIter = (!! (read (tail flag) :: Int)) . iterate R.beta1Reduce
+  term = parse (expand input env) :: Either String LambdaTerm
+  next = case term of
+    Left err -> Output err
+    Right term -> StepThrough "β> " $ iterate R.beta1Reduce term
 interpretCommand env (CP.Beta1Reduce flag input)
   | none flag = Compound [UpdateEnv $ evaluateInEnv (tokenise input), Output $ pureToOutput input env R.beta1Reduce]
   | help flag = Output beta1Help
@@ -139,12 +142,12 @@ interpretCommand env (CP.BetaReduceStrict flag input)
   | num flag = Compound [UpdateEnv $ evaluateInEnv (tokenise input), Output $ pureToOutput input env nthIter]
   | vis flag = Compound [UpdateEnv $ evaluateInEnv (tokenise input), next]
   | otherwise = Error $ invalidFlag "betas"
-  where
-    nthIter = (!! (read (tail flag) :: Int)) . iterate R.beta1ReduceStrict
-    term = parse (expand input env) :: Either String LambdaTerm
-    next = case term of
-      Left err -> Output err
-      Right term -> StepThrough "βs> " $ iterate R.beta1ReduceStrict term
+ where
+  nthIter = (!! (read (tail flag) :: Int)) . iterate R.beta1ReduceStrict
+  term = parse (expand input env) :: Either String LambdaTerm
+  next = case term of
+    Left err -> Output err
+    Right term -> StepThrough "βs> " $ iterate R.beta1ReduceStrict term
 interpretCommand env (CP.Beta1ReduceStrict flag input)
   | none flag = Compound [UpdateEnv $ evaluateInEnv (tokenise input), Output $ pureToOutput input env R.beta1ReduceStrict]
   | help flag = Output beta1SHelp
@@ -155,12 +158,12 @@ interpretCommand env (CP.EtaReduce flag input)
   | num flag = Compound [UpdateEnv $ evaluateInEnv (tokenise input), Output $ pureToOutput input env nthIter]
   | vis flag = Compound [UpdateEnv $ evaluateInEnv (tokenise input), next]
   | otherwise = Error $ invalidFlag "eta"
-  where
-    nthIter = (!! (read (tail flag) :: Int)) . iterate R.etaReduce1
-    term = parse (expand input env) :: Either String LambdaTerm
-    next = case term of
-      Left err -> Output err
-      Right term -> StepThrough "η> " $ iterate R.etaReduce1 term
+ where
+  nthIter = (!! (read (tail flag) :: Int)) . iterate R.etaReduce1
+  term = parse (expand input env) :: Either String LambdaTerm
+  next = case term of
+    Left err -> Output err
+    Right term -> StepThrough "η> " $ iterate R.etaReduce1 term
 interpretCommand env (CP.Eta1Reduce flag input)
   | none flag = Compound [UpdateEnv $ evaluateInEnv (tokenise input), Output $ pureToOutput input env R.etaReduce1]
   | help flag = Output eta1Help

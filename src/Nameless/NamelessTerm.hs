@@ -6,6 +6,8 @@
 
 module NamelessTerm where
 
+import Control.Monad.State (State, modify)
+import Control.Monad.Trans.State.Lazy (evalState, get)
 import qualified Data.Map as M
 import LambdaTerm (LambdaTerm (..))
 
@@ -141,18 +143,40 @@ largestIndex (Var i) = i
 largestIndex (App lhs rhs) = max (largestIndex lhs) (largestIndex rhs)
 largestIndex (Abs body) = largestIndex body
 
+type NamedState = State Int LambdaTerm
+
 toNamed :: NamelessTerm -> LambdaTerm
-toNamed term = helper (-1) term
+toNamed term = evalState (helper (-1) term) 1
   where
     ctx :: [String]
     ctx = ('x' :) . show <$> [0 .. largestIndex term]
 
-    helper :: Index -> NamelessTerm -> LambdaTerm
+    -- TODO needs a state to count the free variables in each scope :)
+    -- fix this shit...
+    helper :: Index -> NamelessTerm -> NamedState
     helper k (Var i)
-      | k - i >= 0 = Variable $ ctx !! (k - i)
-      | otherwise = Variable $ ctx !! (k + 1)
-    helper _ (App lhs@(Abs _) rhs@(Abs _)) = Application (helper (-1) lhs) (helper (-1) rhs)
-    helper k (App lhs@(Abs _) rhs) = Application (helper (-1) lhs) (helper k rhs)
-    helper k (App lhs rhs@(Abs _)) = Application (helper k lhs) (helper (-1) rhs)
-    helper k (App lhs rhs) = Application (helper k lhs) (helper k rhs)
-    helper k (Abs body) = Abstraction (ctx !! (k + 1)) $ helper (k + 1) body
+      | k - i >= 0 = pure $ Variable $ ctx !! (k - i)
+      | otherwise = do
+          modify (+ 1)
+          pure $ Variable $ ctx !! (k + 1)
+    helper _ (App lhs@(Abs _) rhs@(Abs _)) = do
+      free <- get
+      lhs1 <- helper (-1) lhs
+      modify $ const free
+      rhs1 <- helper (-1) rhs
+      modify $ const free
+      pure $ Application lhs1 rhs1
+    helper k (App lhs@(Abs _) rhs) = do
+      free <- get
+      lhs1 <- helper (-1) lhs
+      modify $ const free
+      rhs1 <- helper k rhs
+      pure $ Application lhs1 rhs1
+    helper k (App lhs rhs@(Abs _)) = do
+      lhs1 <- helper k lhs
+      free <- get
+      rhs1 <- helper (-1) rhs
+      modify $ const free
+      pure $ Application lhs1 rhs1
+    helper k (App lhs rhs) = liftA2 Application (helper k lhs) (helper k rhs)
+    helper k (Abs body) = Abstraction (ctx !! (k + 1)) <$> helper k body

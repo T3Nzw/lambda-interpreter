@@ -5,6 +5,8 @@ import NamelessTerm (NamelessTerm (..), fromNamed)
 
 -- one day...
 
+-- TODO: a class would look amazing here, ngl
+
 eqPrefix :: String
 eqPrefix = "\ESC[0m"
 

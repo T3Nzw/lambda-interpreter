@@ -125,6 +125,34 @@ rename old new (Abstraction var body)
   where
     resterm = rename old new body
 
+-- GOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOOD i need to keep track of the prefixes as well
+numericSuffixes :: [String] -> [Int]
+numericSuffixes l = [read r | x <- l, let r = numsuffix x, not (null r)]
+  where
+    numsuffix [] = []
+    numsuffix l@(x : xs) =
+      if all isDigit l
+        then l
+        else numsuffix xs
+
+-- LATEST UPDATE: i think i figured it out. split each variable name into
+-- an alphanumeric prefix and numeric suffix (the above function)
+-- and take the length (can all be done in the same function! talk about optimal code)
+-- of the list (the number of all vars basically).
+-- check if the lowest value of a numeric suffix in the list is
+-- greater or equal than the number of all variable names:
+-- >> if so, assign each of the old variables a new variable name
+--    and alpha convert the entire term. the new variable names are
+--    generated with prefixes `zip` [0..n-1] where is the number of all variables.
+-- >> otherwise, take the largest numeric suffix value, call it m, and map the old
+--    variable names using prefixes `zip` [m+1..m+n].
+-- technically i don't even need to preserve the prefixes, they are ultimately
+-- meaningless, i can just use repeat "x" :D or if i want to be fancier
+-- and allow for lower values of numeric suffixes, i can split the newly
+-- generated numeric suffixes among a finite set of prefix strings (e.g. ["x", "y", "z"])
+-- and be able to use lower values of the numeric suffixes, since x1 and y1 will be distinct.
+-- that sounds like a total hassle, so i probably won't be doing it anytime soon :D
+
 -- generates the next variable name based on a list of
 -- previously used variable names so as to avoid name clashes
 -- generating new variable names suddenly isn't all that trivial..............................
@@ -141,7 +169,10 @@ rename old new (Abstraction var body)
 -- or i mean, it only works in some cases when no variable capture takes place
 -- or isn't fed the OMEGA combinator (which DOES get reduced :( )
 nextName :: String -> [String] -> String
-nextName prev used = head [new | n <- [0 ..] :: [Int], let new = takeWhile isAlpha prev ++ show n, show n `notElem` used]
+nextName prev used =
+  let used' = numericSuffixes used
+      n = length used
+   in head [new | n <- [0 ..] :: [Int], let new = takeWhile isAlpha prev ++ show n, show n `notElem` used]
 
 -- renames every single bound variable
 alphaConvert :: LambdaTerm -> LambdaTerm
@@ -158,7 +189,7 @@ alphaConvert = fst . helper []
       where
         newName = nextName var used
         replaced = rename var newName body
-        (term1, used1) = helper (dropWhile isAlpha newName : used) replaced
+        (term1, used1) = helper (newName : used) replaced
 
 currySubstitution :: String -> LambdaTerm -> LambdaTerm -> LambdaTerm
 currySubstitution = helper
